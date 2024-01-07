@@ -1,0 +1,28 @@
+[[data]]
+title = "Style Enhancer XL"
+repo = "Linaqruf/style-enhancer-xl-lora"
+weights = "style-enhancer-xl.safetensors"
+multiplier = 0.6
+[[data]]
+title = "Anime Detailer XL"
+repo = "Linaqruf/anime-detailer-xl-lora"
+weights = "anime-detailer-xl.safetensors"
+multiplier = 2.0
+
+[[data]]
+title = "Sketch Style XL"
+repo = "Linaqruf/sketch-style-xl-lora"
+weights = "sketch-style-xl.safetensors"
+multiplier = 0.6
+
+[[data]]
+title = "Pastel Style XL 2.0"
+repo = "Linaqruf/pastel-style-xl-lora"
+weights = "pastel-style-xl-v2.safetensors"
+multiplier = 0.6
+
+[[data]]
+title = "Anime Nouveau XL"
+repo = "Linaqruf/anime-nouveau-xl-lora"
+weights = "anime-nouveau-xl.safetensors"
+multiplier = 0.6

@@ -1,10 +1,10 @@
-accelerate==0.24.1
-diffusers==0.23.0
-gradio==4.2.0
+accelerate==0.25.0
+diffusers==0.24.0
+gradio==4.8.0
 invisible-watermark==0.2.0
-Pillow==10.1.0
-torch==2.0.1
-transformers==4.35.0
+Pillow==9.4.0
+torch==2.1.0
+transformers==4.35.2
 toml==0.10.2
 omegaconf==2.3.0
 timm==0.9.10

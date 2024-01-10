@@ -631,7 +631,7 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
                         placeholder="Enter a negative prompt",
                     )
                     with gr.Accordion(label="Quality Tags", open=True):
-                        add_quality_tags = gr.Checkbox(label="Add Quality Tags", value=False)
+                        add_quality_tags = gr.Checkbox(label="Add Quality Tags", value=True)
                         quality_selector = gr.Dropdown(
                             label="Quality Tags Presets",
                             interactive=True,

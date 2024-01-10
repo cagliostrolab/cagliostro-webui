@@ -39,7 +39,7 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 
-DESCRIPTION = "<s>Anything XL</s> \n Animagine XL 3.0"
+DESCRIPTION = "Animagine XL 3.0"
 if not torch.cuda.is_available():
     DESCRIPTION += "\n<p>Running on CPU 🥶 This demo does not work on CPU. </p>"
 IS_COLAB = utils.is_google_colab() or os.getenv("IS_COLAB") == "1"
@@ -51,7 +51,7 @@ MAX_IMAGE_SIZE = int(os.getenv("MAX_IMAGE_SIZE", "2048"))
 USE_TORCH_COMPILE = os.getenv("USE_TORCH_COMPILE") == "1"
 ENABLE_CPU_OFFLOAD = os.getenv("ENABLE_CPU_OFFLOAD") == "1"
 
-MODEL = os.getenv("MODEL", "Linaqruf/animagine-xl-2.0")
+MODEL = os.getenv("MODEL", "https://huggingface.co/Linaqruf/animagine-xl-3.0/blob/main/animagine-xl-3.0.safetensors")
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -180,10 +180,17 @@ def preprocess_prompt(
     style_name: str,
     positive: str,
     negative: str = "",
+    add_style: bool = True,
 ) -> Tuple[str, str]:
-    p, n = style_dict.get(style_name, styles["(None)"])
+    p, n = style_dict.get(style_name, style_dict["(None)"])
 
-    return p.format(prompt=positive), n + negative
+    if add_style and positive.strip():
+        formatted_positive = p.format(prompt=positive)
+    else:
+        formatted_positive = positive
+
+    combined_negative = n + negative
+    return formatted_positive, combined_negative
 
 
 def common_upscale(samples, width, height, upscale_method):
@@ -250,6 +257,7 @@ def generate(
     use_upscaler: bool = False,
     upscaler_strength: float = 0.5,
     upscale_by: float = 1.5,
+    add_quality_tags: bool = True,
     profile: gr.OAuthProfile | None = None,
     progress=gr.Progress(track_tqdm=True),
 ) -> PIL.Image.Image:
@@ -265,9 +273,10 @@ def generate(
     )
 
     prompt = add_wildcard(prompt, wildcard_files)
+
     
     prompt, negative_prompt = preprocess_prompt(
-        quality_prompt, quality_selector, prompt, negative_prompt
+        quality_prompt, quality_selector, prompt, negative_prompt, add_quality_tags
     )
     prompt, negative_prompt = preprocess_prompt(
         styles, style_selector, prompt, negative_prompt
@@ -331,6 +340,7 @@ def generate(
         "seed": seed,
         "sampler": sampler,
         "sdxl_style": style_selector,
+        "add_quality_tags": add_quality_tags,
         "quality_tags": quality_selector,
     }
 
@@ -449,12 +459,12 @@ quality_prompt_list = [
     },
     {
         "name": "Light",
-        "prompt": "{prompt}, (masterpiece), best quality, expressive eyes, perfect face",
+        "prompt": "{prompt}, (masterpiece), best quality, perfect face",
         "negative_prompt": "nsfw, (low quality, worst quality:1.2), 3d, watermark, signature, ugly, poorly drawn, ",
     },
     {
         "name": "Heavy",
-        "prompt": "{prompt}, (masterpiece), (best quality), (ultra-detailed), illustration, disheveled hair, detailed eyes, perfect composition, moist skin, intricate details, earrings",
+        "prompt": "{prompt}, (masterpiece), (best quality), (ultra-detailed), illustration, disheveled hair, perfect composition, moist skin, intricate details, earrings",
         "negative_prompt": "nsfw, longbody, lowres, bad anatomy, bad hands, missing fingers, pubic hair, extra digit, fewer digits, cropped, worst quality, low quality, ",
     },
 ]
@@ -579,13 +589,13 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
         elem_id="title",
     )
     gr.Markdown(
-        f"""Gradio demo for [Linaqruf/animagine-xl-2.0](https://huggingface.co/Linaqruf/animagine-xl-2.0)""",
+        f"""Gradio demo for [cagliostrolab/animagine-xl-3.0](https://huggingface.co/cagliostrolab/animagine-xl-3.0)""",
         elem_id="subtitle",
     )
     gr.Markdown(
         f"""Prompting is a bit different in this iteration, we train the model like this:
         ```
-        1girl/1boy, character name, from what series, by which artist, everything else in random order. 
+        1girl/1boy, character name, from what series, everything else in any order. 
         ```
         Prompting Tips
         ```
@@ -595,12 +605,11 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
         4. Escape character: `character name \(series\)`
         5. Recommended settings: `Euler a, cfg 5-7, 25-28 steps`
         6. It's recommended to use the exact danbooru tags for more accurate result
-        7. To use wildcard, add this syntax to the prompt `__character__` for character and '__artist__' for artstyle.
+        7. To use character wildcard, add this syntax to the prompt `__character__`.
         ```
         """,
         elem_id="subtitle",
-    )
-
+    )   
     gr.DuplicateButton(
         value="Duplicate Space for private use",
         elem_id="duplicate-button",
@@ -621,10 +630,10 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
                         max_lines=5,
                         placeholder="Enter a negative prompt",
                     )
-                    with gr.Accordion(label="Quality Prompt Presets", open=False):
+                    with gr.Accordion(label="Quality Tags", open=True):
+                        add_quality_tags = gr.Checkbox(label="Add Quality Tags", value=False)
                         quality_selector = gr.Dropdown(
-                            label="Quality Prompt Presets",
-                            show_label=False,
+                            label="Quality Tags Presets",
                             interactive=True,
                             choices=list(quality_prompt.keys()),
                             value="Standard",
@@ -720,7 +729,7 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
                         guidance_scale = gr.Slider(
                             label="Guidance scale",
                             minimum=1,
-                            maximum=10,
+                            maximum=12,
                             step=0.1,
                             value=7.0,
                         )
@@ -798,6 +807,7 @@ with gr.Blocks(css="style.css", theme="NoCrypt/miku@1.2.1") as demo:
         use_upscaler,
         upscaler_strength,
         upscale_by,
+        add_quality_tags
     ]
 
     prompt.submit(

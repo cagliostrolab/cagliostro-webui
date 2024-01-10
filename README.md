@@ -1,5 +1,5 @@
 ---
-title: Animagine XL 2.0
+title: Animagine XL 3.0
 emoji: 🌍
 colorFrom: gray
 colorTo: purple
